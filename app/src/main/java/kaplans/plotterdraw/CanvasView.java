@@ -30,13 +30,13 @@ import io.particle.android.sdk.cloud.ParticleDevice;
 import io.particle.android.sdk.utils.Async;
 
 public class CanvasView extends View {
+    private static final float TOLERANCE = 2;
 
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private Path mPath;
     private Paint mPaint;
     private float mX, mY;
-    private static final float TOLERANCE = 2;
     private Context context;
 
     private ParticleDevice device = null;
@@ -59,6 +59,10 @@ public class CanvasView extends View {
         {
             while(true)
             {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(10);
+                } catch (InterruptedException e) {}
+
                 if (device == null) {
                     try {
                         device = ParticleCloudSDK.getCloud().getDevice("48ff6e065067555037541287");
@@ -72,26 +76,34 @@ public class CanvasView extends View {
                     }
                 }
 
-                String ins = gcode.poll();
-                if (ins != null) {
-                    Log.d("GCODE", ins);
+                // pull multiple off the queue
+                String instructions = "";
+                while (true) {
+                    String ins = gcode.peek();
+                    if (ins == null) break;
+                    if (instructions.length() + ins.length() < 60)
+                        instructions += gcode.poll() + "\n";
+                    else
+                        break;
+
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(10);
+                    } catch (InterruptedException e) {}
+                }
+
+                if (instructions.length() > 0) {
+                    Log.d("GCODE", instructions);
 
                     try {
                         if (device != null) {
                             List<String> args = new ArrayList<String>();
-                            args.add(ins);
+                            args.add(instructions);
                             int res = device.callFunction("gcode", args);
                         }
                     }
                     catch (ParticleCloudException e) {Log.e("GCODE_HANDLER", e.toString());}
                     catch (ParticleDevice.FunctionDoesNotExistException e) {Log.e("GCODE_HANDLER", e.toString());}
                     catch (IOException e) {Log.e("GCODE_HANDLER", e.toString());}
-
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(10);
-                    } catch (InterruptedException e) {
-                        //Handle exception
-                    }
                 }
             }
         }
@@ -157,6 +169,25 @@ public class CanvasView extends View {
         mCanvas = new Canvas(mBitmap);
     }
 
+    private String getGcodeForPoint(float x, float y)
+    {
+        float factor = mCanvas.getWidth() / 100;
+        //Log.d("FACTOR",  ""+factor);
+        //Log.d("WIDTH",  ""+mCanvas.getWidth());
+        y /= factor;
+        x /= factor;
+        String ins = "G01";
+        if ((int)x != (int)mX)
+            ins += " X" + String.format("%.1f", x);
+        if ((int)y != (int)mY)
+            ins += " Y" + String.format("%.1f", y);
+        mX = x;
+        mY = y;
+        //Log.d("GET_CODE", ins);
+        if (ins.length() > 4) return ins;
+        return null;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -167,14 +198,8 @@ public class CanvasView extends View {
     // when ACTION_DOWN start touch according to the x,y values
     private void startTouch(float x, float y) {
         mPath.moveTo(x, y);
-        float factor = mCanvas.getWidth() / 100;
-        Log.d("FACTOR",  ""+factor);
-        Log.d("WIDTH",  ""+mCanvas.getWidth());
-        y /= factor;
-        x /= factor;
-        gcode.add("G00 X" + x + " Y" + y);
-        mX = x;
-        mY = y;
+        String ins = getGcodeForPoint(x, y);
+        if (ins != null) gcode.add(ins);
         gcode.add("M300 S30.0");
     }
 
@@ -238,19 +263,16 @@ public class CanvasView extends View {
         float dy = Math.abs(y - mY);
         if (dx >= TOLERANCE || dy >= TOLERANCE) {
             mPath.lineTo(x, y);
-            mX = x;
-            mY = y;
-            float factor = mCanvas.getWidth() / 100;
-            Log.d("FACTOR",  ""+factor);
-            Log.d("WIDTH",  ""+mCanvas.getWidth());
-            y /= factor;
-            x /= factor;
-            gcode.add("G01 X" + x + " Y" + y);
+            String ins = getGcodeForPoint(x, y);
+            if (ins != null) gcode.add(ins);
         }
     }
 
-    private void upTouch() {
-        mPath.lineTo(mX, mY);
+    private void upTouch(float x, float y) {
+        mPath.lineTo(x, y);
+        String ins = getGcodeForPoint(x, y);
+        if (ins != null) gcode.add(ins);
+        //Log.d("UPTOUCH", "X" + mX + " Y" + mY);
         gcode.add("M300 S50.0");
     }
 
@@ -269,7 +291,7 @@ public class CanvasView extends View {
                 invalidate();
                 break;
             case MotionEvent.ACTION_UP:
-                upTouch();
+                upTouch(x, y);
                 invalidate();
                 break;
         }
