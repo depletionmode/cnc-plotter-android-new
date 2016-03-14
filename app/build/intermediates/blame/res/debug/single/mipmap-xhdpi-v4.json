@@ -1,5 +1,9 @@
 [
     {
+        "merged": "/home/depmod/AndroidStudioProjects/cnc-plotter-android-new/app/build/intermediates/res/merged/debug/mipmap-xhdpi-v4/ic_launcher.png",
+        "source": "/home/depmod/AndroidStudioProjects/cnc-plotter-android-new/app/src/main/res/mipmap-xhdpi/ic_launcher.png"
+    },
+    {
         "merged": "/Users/kaplans/AndroidStudioProjects/PlotterDraw/app/build/intermediates/res/merged/debug/mipmap-xhdpi-v4/ic_launcher.png",
         "source": "/Users/kaplans/AndroidStudioProjects/PlotterDraw/app/src/main/res/mipmap-xhdpi/ic_launcher.png"
     }

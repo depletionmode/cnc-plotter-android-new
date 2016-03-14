@@ -1,12 +1,14 @@
 package kaplans.plotterdraw;
 
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -198,6 +200,11 @@ public class CanvasView extends View {
     }
 
     public void sendAdjustAxis(final String axis) {
+        if (axis.equals("reset")) {
+            Activity a = (Activity)this.getContext();
+            a.recreate();
+        }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -207,9 +214,6 @@ public class CanvasView extends View {
                     args.add(axis);
                     Log.d("ADJUST_AXIS", axis);
                     int res = device.callFunction("adjustAxis", args);
-                    if (axis.equals("reset")) {
-                        mCanvas = new Canvas(mBitmap);
-                    }
                 } catch (ParticleCloudException e) {
                     Log.e("GCODE_HANDLER", e.getBestMessage());
                 } catch (ParticleDevice.FunctionDoesNotExistException e) {

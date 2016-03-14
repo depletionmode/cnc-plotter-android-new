@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/PlotterDraw.iml" filepath="$PROJECT_DIR$/PlotterDraw.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/cnc-plotter-android-new.iml" filepath="$PROJECT_DIR$/cnc-plotter-android-new.iml" />
     </modules>
   </component>
 </project>
